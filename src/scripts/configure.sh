@@ -1,37 +1,42 @@
 #!/bin/sh
-if cat /etc/issue | grep "Alpine" >/dev/null 2>&1; then
-    . $BASH_ENV
+#shellcheck disable=SC1090
+if grep "Alpine" /etc/issue > /dev/null 2>&1; then
+    touch "$BASH_ENV"
+    . "$BASH_ENV"
 fi
 
-PARAM_AWS_CLI_ACCESS_KEY_ID=$(eval echo "\$$PARAM_AWS_CLI_ACCESS_KEY_ID")
-PARAM_AWS_CLI_SECRET_ACCESS_KEY=$(eval echo "\$$PARAM_AWS_CLI_SECRET_ACCESS_KEY")
-PARAM_AWS_CLI_REGION=$(eval echo "\$$PARAM_AWS_CLI_REGION")
+AWS_CLI_STR_ACCESS_KEY_ID="$(echo "$AWS_CLI_STR_ACCESS_KEY_ID" | circleci env subst)"
+AWS_CLI_STR_SECRET_ACCESS_KEY="$(echo "$AWS_CLI_STR_SECRET_ACCESS_KEY" | circleci env subst)"
+AWS_SESSION_TOKEN="$(echo "$AWS_SESSION_TOKEN" | circleci env subst)"
+AWS_CLI_STR_REGION="$(echo "$AWS_CLI_STR_REGION" | circleci env subst)"
+AWS_CLI_STR_PROFILE_NAME="$(echo "$AWS_CLI_STR_PROFILE_NAME" | circleci env subst)"
 
-if [ -z "$PARAM_AWS_CLI_ACCESS_KEY_ID" ] || [ -z "${PARAM_AWS_CLI_SECRET_ACCESS_KEY}" ]; then 
+if [ -z "$AWS_CLI_STR_ACCESS_KEY_ID" ] || [ -z "${AWS_CLI_STR_SECRET_ACCESS_KEY}" ]; then 
     echo "Cannot configure profile. AWS access key id and AWS secret access key must be provided."
     exit 1
 fi
-
+set -x
 aws configure set aws_access_key_id \
-    "$PARAM_AWS_CLI_ACCESS_KEY_ID" \
-    --profile "$PARAM_AWS_CLI_PROFILE_NAME"
+    "$AWS_CLI_STR_ACCESS_KEY_ID" \
+    --profile "$AWS_CLI_STR_PROFILE_NAME"
 
 aws configure set aws_secret_access_key \
-    "$PARAM_AWS_CLI_SECRET_ACCESS_KEY" \
-    --profile "$PARAM_AWS_CLI_PROFILE_NAME"
+    "$AWS_CLI_STR_SECRET_ACCESS_KEY" \
+    --profile "$AWS_CLI_STR_PROFILE_NAME"
 
 if [ -n "${AWS_SESSION_TOKEN}" ]; then
     aws configure set aws_session_token \
         "${AWS_SESSION_TOKEN}" \
-        --profile "$PARAM_AWS_CLI_PROFILE_NAME"
+        --profile "$AWS_CLI_STR_PROFILE_NAME"
 fi
 
-if [ "$PARAM_AWS_CLI_CONFIG_DEFAULT_REGION" = "1" ]; then
-    aws configure set default.region "$PARAM_AWS_CLI_REGION" \
-        --profile "$PARAM_AWS_CLI_PROFILE_NAME"
+
+if [ "$AWS_CLI_BOOL_CONFIG_DEFAULT_REGION" -eq "1" ]; then
+    aws configure set default.region "$AWS_CLI_STR_REGION"
 fi
 
-if [ "$PARAM_AWS_CLI_CONFIG_PROFILE_REGION" = "1" ]; then
-    aws configure set region "$PARAM_AWS_CLI_REGION" \
-        --profile "$PARAM_AWS_CLI_PROFILE_NAME"
+if [ "$AWS_CLI_BOOL_CONFIG_PROFILE_REGION" -eq "1" ]; then
+    aws configure set region "$AWS_CLI_STR_REGION" \
+        --profile "$AWS_CLI_STR_PROFILE_NAME"
 fi
+set +x

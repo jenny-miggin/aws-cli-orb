@@ -3,7 +3,7 @@ usage:
   version: 2.1
 
   orbs:
-    aws-cli: circleci/aws-cli@3.1
+    aws-cli: circleci/aws-cli@4.0
 
   jobs:
     aws-cli-example:
@@ -11,7 +11,7 @@ usage:
       steps:
         - checkout
         - aws-cli/setup:
-            profile-name: example
+            profile_name: example
         - run: echo "Run your code here"
 
   workflows:

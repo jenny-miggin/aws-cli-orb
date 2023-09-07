@@ -5,23 +5,23 @@ parameters:
     description: Select a specific version of the AWS v2 CLI. By default the latest version will be used.
     default: latest
     type: string
-  override-installed:
+  override_installed:
     type: boolean
     default: false
     description: |
       By default, if the AWS CLI is detected on the system, the install will be skipped.
       Enable this to override the installed version and install your specified version.
-  disable-aws-pager:
+  disable_aws_pager:
     description: |
       Set to false to skip forceful disabling of all AWS CLI output paging.
     type: boolean
     default: true
-  install-dir:
+  install_dir:
     type: string
     default: /usr/local/aws-cli
     description: |
       Specify the installation directory of AWS CLI. Defaults to /usr/local/aws-cli
-  binary-dir:
+  binary_dir:
     type: string
     default: /usr/local/bin
     description: |
@@ -30,9 +30,13 @@ steps:
   - run:
       name: Install AWS CLI - <<parameters.version>>
       environment:
-        PARAM_AWS_CLI_VERSION: <<parameters.version>>
-        PARAM_AWS_CLI_DISABLE_PAGER: <<parameters.disable-aws-pager>>
-        PARAM_AWS_CLI_OVERRIDE: <<parameters.override-installed>>
-        PARAM_AWS_CLI_INSTALL_DIR: <<parameters.install-dir>>
-        PARAM_AWS_CLI_BINARY_DIR: <<parameters.binary-dir>>
+        AWS_CLI_STR_AWS_CLI_VERSION: <<parameters.version>>
+        AWS_CLI_BOOL_DISABLE_PAGER: <<parameters.disable_aws_pager>>
+        AWS_CLI_BOOL_OVERRIDE: <<parameters.override_installed>>
+        AWS_CLI_EVAL_INSTALL_DIR: <<parameters.install_dir>>
+        AWS_CLI_EVAL_BINARY_DIR: <<parameters.binary_dir>>
+        SCRIPT_INSTALL_WINDOWS: << include(scripts/windows/install.sh) >>
+        SCRIPT_INSTALL_LINUX: << include(scripts/linux/install.sh) >>
+        SCRIPT_INSTALL_MACOS: << include(scripts/macos/install.sh) >>
+        SCRIPT_UTILS: << include(scripts/utils.sh) >>
       command: <<include(scripts/install.sh)>>

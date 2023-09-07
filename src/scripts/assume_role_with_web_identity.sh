@@ -1,12 +1,18 @@
-PARAM_ROLE_SESSION_NAME=$(eval echo "${PARAM_ROLE_SESSION_NAME}")
-PARAM_AWS_CLI_ROLE_ARN=$(eval echo "${PARAM_AWS_CLI_ROLE_ARN}")
+#!/bin/sh
+AWS_CLI_STR_ROLE_SESSION_NAME="$(echo "${AWS_CLI_STR_ROLE_SESSION_NAME}" | circleci env subst)"
+AWS_CLI_STR_ROLE_ARN="$(echo "${AWS_CLI_STR_ROLE_ARN}" | circleci env subst)"
+AWS_CLI_STR_PROFILE_NAME="$(echo "${AWS_CLI_STR_PROFILE_NAME}" | circleci env subst)"
+AWS_CLI_STR_REGION="$(echo "${AWS_CLI_STR_REGION}" | circleci env subst)"
 
-if [ -z "${PARAM_ROLE_SESSION_NAME}" ]; then
+# Replaces white spaces in role session name with dashes
+AWS_CLI_STR_ROLE_SESSION_NAME=$(echo "${AWS_CLI_STR_ROLE_SESSION_NAME}" | tr ' ' '-')
+
+if [ -z "${AWS_CLI_STR_ROLE_SESSION_NAME}" ]; then
     echo "Role session name is required"
     exit 1
 fi
 
-if [ -z "${CIRCLE_OIDC_TOKEN}" ]; then
+if [ -z "${CIRCLE_OIDC_TOKEN_V2}" ]; then
     echo "OIDC Token cannot be found. A CircleCI context must be specified."
     exit 1
 fi
@@ -16,12 +22,17 @@ if [ ! "$(command -v aws)" ]; then
     exit 1
 fi
 
+if [ -n "${AWS_CLI_STR_REGION}" ]; then
+    set -- "$@" --region "${AWS_CLI_STR_REGION}"
+fi
+
 read -r AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN <<EOF
 $(aws sts assume-role-with-web-identity \
---role-arn "${PARAM_AWS_CLI_ROLE_ARN}" \
---role-session-name "${PARAM_ROLE_SESSION_NAME}" \
---web-identity-token "${CIRCLE_OIDC_TOKEN}" \
---duration-seconds "${PARAM_SESSION_DURATION}" \
+--role-arn "${AWS_CLI_STR_ROLE_ARN}" \
+--role-session-name "${AWS_CLI_STR_ROLE_SESSION_NAME}" \
+--web-identity-token "${CIRCLE_OIDC_TOKEN_V2}" \
+--duration-seconds "${AWS_CLI_INT_SESSION_DURATION}" \
+"$@" \
 --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
 --output text)
 EOF
